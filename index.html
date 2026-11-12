@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Playable Ad Validator</title>
+    <meta
+      name="description"
+      content="Check an HTML5 playable ad against AppLovin, Unity, Google, Meta, Mintegral, TikTok, Moloco and Liftoff rules, preview it with a mocked SDK, and convert it for every network. Files never leave your browser."
+    />
+    <style>
+      :root {
+        --bg: #f6f7fb;
+        --panel: #ffffff;
+        --text: #141a33;
+        --muted: #5d6585;
+        --line: #e3e6f0;
+        --accent: #4f46e5;
+        --pass: #15803d;
+        --pass-bg: #e7f6ec;
+        --warn: #b45309;
+        --warn-bg: #fdf3e2;
+        --fail: #b91c1c;
+        --fail-bg: #fdecec;
+        --radius: 14px;
+        color-scheme: light;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0e1222;
+          --panel: #161b30;
+          --text: #e8ebf7;
+          --muted: #9aa3c4;
+          --line: #262d4a;
+          --accent: #8b85ff;
+          --pass: #4ade80;
+          --pass-bg: #12301f;
+          --warn: #fbbf24;
+          --warn-bg: #33270e;
+          --fail: #f87171;
+          --fail-bg: #3a1717;
+          color-scheme: dark;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          15px/1.5 system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+      }
+      header.top {
+        padding: 20px 16px 8px;
+        max-width: 1180px;
+        margin: 0 auto;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 8px 16px;
+      }
+      header.top h1 {
+        font-size: 22px;
+        margin: 0;
+      }
+      header.top p {
+        margin: 0;
+        color: var(--muted);
+      }
+      main {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 8px 16px 48px;
+      }
+      .tabs {
+        display: flex;
+        gap: 6px;
+        margin: 12px 0;
+      }
+      .tabs button {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        color: var(--text);
+        padding: 8px 16px;
+        border-radius: 999px;
+        font: inherit;
+        cursor: pointer;
+      }
+      .tabs button[aria-selected='true'] {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+      #drop {
+        border: 2px dashed var(--line);
+        border-radius: var(--radius);
+        background: var(--panel);
+        padding: 28px 16px;
+        text-align: center;
+        transition: border-color 0.15s;
+      }
+      #drop.over {
+        border-color: var(--accent);
+      }
+      #drop strong {
+        display: block;
+        font-size: 17px;
+        margin-bottom: 4px;
+      }
+      .privacy {
+        color: var(--muted);
+        font-size: 13px;
+        margin-top: 8px;
+      }
+      .button,
+      button.primary {
+        display: inline-block;
+        background: var(--accent);
+        color: #fff;
+        border: 0;
+        border-radius: 10px;
+        padding: 10px 18px;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+      }
+      .button.small {
+        padding: 6px 12px;
+        font-size: 13px;
+      }
+      .linkish {
+        background: none;
+        border: 0;
+        color: var(--accent);
+        font: inherit;
+        cursor: pointer;
+        text-decoration: underline;
+        padding: 0;
+      }
+      .meta {
+        margin: 14px 0 6px;
+      }
+      .meta #file-name {
+        font-weight: 600;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      #error {
+        background: var(--fail-bg);
+        color: var(--fail);
+        padding: 10px 14px;
+        border-radius: 10px;
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 8px 0 14px;
+      }
+      .chip {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        border-radius: 999px;
+        padding: 4px 12px;
+        font-size: 13px;
+        cursor: pointer;
+        user-select: none;
+      }
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 380px;
+        gap: 18px;
+        align-items: start;
+      }
+      @media (max-width: 900px) {
+        .layout {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 12px 14px;
+        margin-bottom: 10px;
+      }
+      .card header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+      }
+      .badge {
+        font-size: 12px;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 999px;
+        white-space: nowrap;
+      }
+      .badge.pass {
+        background: var(--pass-bg);
+        color: var(--pass);
+      }
+      .badge.warn {
+        background: var(--warn-bg);
+        color: var(--warn);
+      }
+      .badge.fail {
+        background: var(--fail-bg);
+        color: var(--fail);
+      }
+      .findings {
+        list-style: none;
+        margin: 8px 0 0;
+        padding: 0;
+      }
+      .findings li {
+        padding: 7px 0;
+        border-top: 1px solid var(--line);
+        display: grid;
+        gap: 2px;
+      }
+      .findings .rule {
+        font-weight: 600;
+      }
+      .findings .error .rule {
+        color: var(--fail);
+      }
+      .findings .warning .rule {
+        color: var(--warn);
+      }
+      .findings .msg {
+        font-size: 13px;
+        color: var(--muted);
+        word-break: break-word;
+      }
+      .findings .fix {
+        font-size: 13px;
+      }
+      .findings .ok {
+        color: var(--pass);
+      }
+      aside.preview {
+        position: sticky;
+        top: 12px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 12px;
+      }
+      .preview .bar {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .preview select {
+        flex: 1;
+        min-width: 0;
+        font: inherit;
+        padding: 6px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: var(--bg);
+        color: var(--text);
+      }
+      #device {
+        width: 270px;
+        height: 480px;
+        margin: 0 auto;
+        border: 8px solid #0b0d18;
+        border-radius: 26px;
+        overflow: hidden;
+        background: #000;
+        transition:
+          width 0.2s,
+          height 0.2s;
+      }
+      #device.landscape {
+        width: 356px;
+        height: 200px;
+      }
+      #device iframe {
+        width: 100%;
+        height: 100%;
+        border: 0;
+        display: block;
+      }
+      #log {
+        list-style: none;
+        margin: 10px 0 0;
+        padding: 0;
+        font-size: 13px;
+        max-height: 220px;
+        overflow: auto;
+      }
+      #log li {
+        padding: 5px 0;
+        border-top: 1px solid var(--line);
+      }
+      #log .ok {
+        color: var(--pass);
+      }
+      #log .bad {
+        color: var(--fail);
+      }
+      #log .info {
+        color: var(--muted);
+      }
+      .form {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 10px;
+        margin: 10px 0;
+      }
+      .form label {
+        display: grid;
+        gap: 4px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .form input,
+      .form select {
+        font: inherit;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: var(--panel);
+        color: var(--text);
+      }
+      .downloads {
+        display: grid;
+        gap: 8px;
+        margin: 12px 0;
+      }
+      .dl {
+        display: grid;
+        grid-template-columns: 1fr auto auto auto;
+        gap: 10px;
+        align-items: center;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 10px 12px;
+      }
+      @media (max-width: 600px) {
+        .dl {
+          grid-template-columns: 1fr auto;
+        }
+      }
+      .warning {
+        color: var(--warn);
+        margin: 4px 0;
+        font-size: 14px;
+      }
+      .needs-file {
+        display: none;
+      }
+      body.has-file .needs-file {
+        display: block;
+      }
+      body.has-file .layout.needs-file {
+        display: grid;
+      }
+      body:not([data-tab='convert']) .tab-convert,
+      body[data-tab='convert'] .tab-validate {
+        display: none !important;
+      }
+      footer {
+        color: var(--muted);
+        font-size: 13px;
+        text-align: center;
+        padding: 24px 16px;
+      }
+    </style>
+  </head>
+  <body data-tab="validate">
+    <header class="top">
+      <h1>Playable Ad Validator</h1>
+      <p>Check, preview and convert HTML5 playables for 9 ad networks.</p>
+    </header>
+    <main>
+      <div id="drop">
+        <strong>Drop a playable (.html or .zip)</strong>
+        <span class="muted">or</span> <label class="button small" for="file">choose a file</label>
+        <input id="file" type="file" accept=".html,.htm,.zip" hidden />
+        <span class="muted"> · </span><button class="linkish" id="sample" type="button">try a sample</button>
+        <div class="privacy">Everything runs in your browser. Your file is never uploaded.</div>
+      </div>
+      <p id="error" role="alert" hidden></p>
+
+      <div class="needs-file">
+        <div class="meta">
+          <span id="file-name"></span><br /><span id="detected"></span>
+          <span class="muted" id="evidence"></span>
+        </div>
+        <div class="tabs" role="tablist">
+          <button data-tab="validate" aria-selected="true" type="button">Validate</button>
+          <button data-tab="convert" aria-selected="false" type="button">Convert</button>
+        </div>
+      </div>
+
+      <div class="layout needs-file tab-validate">
+        <div>
+          <div class="chips" id="networks"></div>
+          <label class="muted"
+            >Budget profile
+            <select id="kind">
+              <option value="2d">2D</option>
+              <option value="3d">3D</option>
+            </select></label
+          >
+          <div id="results"></div>
+        </div>
+        <aside class="preview" aria-label="Live preview">
+          <div class="bar">
+            <select id="preview-net" aria-label="Preview as network"></select>
+            <button class="button small" id="rotate" type="button" title="Rotate">⟳</button>
+            <button class="button small" id="reload" type="button" title="Restart">↺</button>
+          </div>
+          <div id="device"><iframe id="frame" title="Playable preview" sandbox="allow-scripts"></iframe></div>
+          <ul id="log" aria-live="polite"></ul>
+        </aside>
+      </div>
+
+      <section class="needs-file tab-convert">
+        <p class="muted">
+          Re-package this playable for every network: SDK tags are swapped, a bridge maps any CTA call
+          (mraid.open, ExitApi.exit, FbPlayableAd.onCTAClick, install, openAppStore) to the target network,
+          and taps are required before opening the store.
+        </p>
+        <div class="form">
+          <label>App Store URL <input id="ios" placeholder="https://apps.apple.com/app/id…" /></label>
+          <label
+            >Google Play URL
+            <input id="android" placeholder="https://play.google.com/store/apps/details?id=…"
+          /></label>
+          <label
+            >Orientation
+            <select id="orientation">
+              <option value="">From the playable</option>
+              <option value="portrait">Portrait</option>
+              <option value="landscape">Landscape</option>
+              <option value="both">Both</option>
+            </select></label
+          >
+        </div>
+        <div class="chips" id="conv-networks"></div>
+        <button class="primary" id="convert" type="button">Convert</button>
+        <div id="conv-results"></div>
+      </section>
+    </main>
+    <footer>
+      Rules last reviewed 2026-11-11. Always confirm in each network's own test tool before launch.
+    </footer>
+    <script src="app.js"></script>
+  </body>
+</html>
